@@ -31,3 +31,21 @@ class Order:
     qty: int
     ts: float = field(default_factory=lambda: time.time())
     seq: int = 0
+
+
+@dataclass
+class Trade:
+    """Represents an executed trade between two orders.
+    
+    Attributes:
+        buy_order_id: ID of the buy order
+        sell_order_id: ID of the sell order
+        price: Execution price
+        qty: Quantity traded
+        ts: Timestamp of trade execution
+    """
+    buy_order_id: str
+    sell_order_id: str
+    price: float
+    qty: int
+    ts: float = field(default_factory=lambda: time.time())
