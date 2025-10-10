@@ -3,6 +3,7 @@
 from enum import Enum
 from dataclasses import dataclass, field
 import time
+import uuid
 
 
 class Side(Enum):
@@ -49,3 +50,12 @@ class Trade:
     price: float
     qty: int
     ts: float = field(default_factory=lambda: time.time())
+
+
+def new_order_id() -> str:
+    """Generate a unique order ID using UUID4.
+    
+    Returns:
+        A unique hex string identifier for an order.
+    """
+    return uuid.uuid4().hex
