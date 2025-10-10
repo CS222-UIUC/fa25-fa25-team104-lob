@@ -14,7 +14,16 @@ class OrderBook:
     
     def __init__(self):
         """Initialize the order book with empty heaps and order tracking."""
-        pass
+        # Max heap for bids - use negative price for max heap behavior
+        self._bids: List[Tuple[float, int, Order]] = []
+        # Min heap for asks
+        self._asks: List[Tuple[float, int, Order]] = []
+        # Map of order_id -> Order for quick lookup
+        self._orders: Dict[str, Order] = {}
+        # Sequence counter for FIFO ordering at same price
+        self._seq = 0
+        # List of all executed trades
+        self.trades: List[Trade] = []
 
     def add_order(self, order: Order) -> List[Trade]:
         """Add an order to the book and attempt matching.
@@ -45,4 +54,3 @@ class OrderBook:
             Tuple of (best_bid, best_ask), either can be None if no orders
         """
         pass
-
