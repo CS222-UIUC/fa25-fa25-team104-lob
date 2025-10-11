@@ -34,6 +34,34 @@ class OrderBook:
         self._seq += 1
         return self._seq
 
+    def _clean_top_bid(self) -> Optional[Order]:
+        """Remove cancelled/filled orders from top of bid heap.
+        
+        Returns:
+            The top valid bid order, or None if heap is empty
+        """
+        while self._bids:
+            neg_price, seq, order = self._bids[0]
+            # Check if order is still active
+            if order.id in self._orders and order.qty > 0:
+                return order
+            heapq.heappop(self._bids)
+        return None
+
+    def _clean_top_ask(self) -> Optional[Order]:
+        """Remove cancelled/filled orders from top of ask heap.
+        
+        Returns:
+            The top valid ask order, or None if heap is empty
+        """
+        while self._asks:
+            price, seq, order = self._asks[0]
+            # Check if order is still active
+            if order.id in self._orders and order.qty > 0:
+                return order
+            heapq.heappop(self._asks)
+        return None
+
     def add_order(self, order: Order) -> List[Trade]:
         """Add an order to the book and attempt matching.
         
