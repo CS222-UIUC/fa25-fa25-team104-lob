@@ -25,6 +25,15 @@ class OrderBook:
         # List of all executed trades
         self.trades: List[Trade] = []
 
+    def _next_seq(self) -> int:
+        """Get the next sequence number for FIFO ordering.
+        
+        Returns:
+            The next sequence number
+        """
+        self._seq += 1
+        return self._seq
+
     def add_order(self, order: Order) -> List[Trade]:
         """Add an order to the book and attempt matching.
         
