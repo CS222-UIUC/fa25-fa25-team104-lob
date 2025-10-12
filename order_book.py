@@ -71,7 +71,21 @@ class OrderBook:
         Returns:
             List of trades that resulted from matching
         """
-        pass
+        # Assign sequence number for FIFO ordering
+        order.seq = self._next_seq()
+        
+        # Add to order tracking
+        self._orders[order.id] = order
+        
+        # Add to appropriate heap based on side
+        if order.side == Side.BUY:
+            # Use negative price for max heap behavior
+            heapq.heappush(self._bids, (-order.price, order.seq, order))
+        else:
+            heapq.heappush(self._asks, (order.price, order.seq, order))
+        
+        # Try to match orders
+        return self._try_match()
 
     def cancel_order(self, order_id: str) -> bool:
         """Cancel an order by ID.
@@ -91,3 +105,7 @@ class OrderBook:
             Tuple of (best_bid, best_ask), either can be None if no orders
         """
         pass
+
+    def _try_match(self) -> List[Trade]:
+        """Attempt to match orders. Placeholder for now."""
+        return []
