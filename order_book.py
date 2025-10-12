@@ -88,7 +88,10 @@ class OrderBook:
         return self._try_match()
 
     def cancel_order(self, order_id: str) -> bool:
-        """Cancel an order by ID.
+        """Cancel an order by ID using lazy deletion.
+        
+        The order is removed from the tracking dict but left in the heap.
+        It will be cleaned up when it reaches the top of the heap.
         
         Args:
             order_id: The ID of the order to cancel
@@ -96,7 +99,10 @@ class OrderBook:
         Returns:
             True if order was found and cancelled, False otherwise
         """
-        pass
+        if order_id in self._orders:
+            del self._orders[order_id]
+            return True
+        return False
 
     def top_of_book(self) -> Tuple[Optional[Order], Optional[Order]]:
         """Get the best bid and ask orders.
