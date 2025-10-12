@@ -110,7 +110,9 @@ class OrderBook:
         Returns:
             Tuple of (best_bid, best_ask), either can be None if no orders
         """
-        pass
+        best_bid = self._clean_top_bid()
+        best_ask = self._clean_top_ask()
+        return (best_bid, best_ask)
 
     def _try_match(self) -> List[Trade]:
         """Attempt to match orders. Placeholder for now."""
