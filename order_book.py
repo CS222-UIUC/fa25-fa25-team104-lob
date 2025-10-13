@@ -115,5 +115,31 @@ class OrderBook:
         return (best_bid, best_ask)
 
     def _try_match(self) -> List[Trade]:
-        """Attempt to match orders. Placeholder for now."""
-        return []
+        """Attempt to match best bid and ask while prices cross.
+        
+        A match occurs when the best bid price >= best ask price.
+        
+        Returns:
+            List of trades executed during matching
+        """
+        executed_trades: List[Trade] = []
+        
+        while True:
+            best_bid = self._clean_top_bid()
+            best_ask = self._clean_top_ask()
+            
+            # Check if we can match
+            if best_bid is None or best_ask is None:
+                break
+            if best_bid.price < best_ask.price:
+                break
+            
+            # Prices cross - we have a match!
+            # Pop both orders from heaps
+            heapq.heappop(self._bids)
+            heapq.heappop(self._asks)
+            
+            # TODO: Execute the trade in next commit
+            break
+        
+        return executed_trades
