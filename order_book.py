@@ -152,6 +152,8 @@ class OrderBook:
         """Attempt to match best bid and ask while prices cross.
         
         A match occurs when the best bid price >= best ask price.
+        Uses price-time priority: best price first, then earliest order.
+        Trade price is the passive order's price (the one already in the book).
         
         Returns:
             List of trades executed during matching
@@ -173,7 +175,22 @@ class OrderBook:
             heapq.heappop(self._bids)
             heapq.heappop(self._asks)
             
-            # TODO: Execute the trade in next commit
-            break
+            # Calculate trade quantity and price
+            trade_qty = min(best_bid.qty, best_ask.qty)
+            # Use the passive order's price (earlier order)
+            if best_bid.seq < best_ask.seq:
+                trade_price = best_bid.price
+            else:
+                trade_price = best_ask.price
+            
+            # Execute the trade
+            trade = self._execute_trade(best_bid, best_ask, trade_price, trade_qty)
+            executed_trades.append(trade)
+            
+            # Push back orders with remaining quantity
+            if best_bid.qty > 0:
+                heapq.heappush(self._bids, (-best_bid.price, best_bid.seq, best_bid))
+            if best_ask.qty > 0:
+                heapq.heappush(self._asks, (best_ask.price, best_ask.seq, best_ask))
         
         return executed_trades
