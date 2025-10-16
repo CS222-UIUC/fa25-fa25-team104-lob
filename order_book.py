@@ -104,6 +104,17 @@ class OrderBook:
             return True
         return False
 
+    def get_order(self, order_id: str) -> Optional[Order]:
+        """Get an order by ID.
+        
+        Args:
+            order_id: The ID of the order to retrieve
+            
+        Returns:
+            The Order if found, None otherwise
+        """
+        return self._orders.get(order_id)
+
     def top_of_book(self) -> Tuple[Optional[Order], Optional[Order]]:
         """Get the best bid and ask orders.
         
