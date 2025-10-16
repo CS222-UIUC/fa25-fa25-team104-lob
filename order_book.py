@@ -114,6 +114,40 @@ class OrderBook:
         best_ask = self._clean_top_ask()
         return (best_bid, best_ask)
 
+    def _execute_trade(self, buy: Order, sell: Order, price: float, qty: int) -> Trade:
+        """Execute a trade between a buy and sell order.
+        
+        Args:
+            buy: The buy order
+            sell: The sell order
+            price: The execution price
+            qty: The quantity to trade
+            
+        Returns:
+            The Trade object representing this execution
+        """
+        # Reduce quantities
+        buy.qty -= qty
+        sell.qty -= qty
+        
+        # Remove fully filled orders from tracking
+        if buy.qty == 0:
+            if buy.id in self._orders:
+                del self._orders[buy.id]
+        if sell.qty == 0:
+            if sell.id in self._orders:
+                del self._orders[sell.id]
+        
+        # Create and record the trade
+        trade = Trade(
+            buy_order_id=buy.id,
+            sell_order_id=sell.id,
+            price=price,
+            qty=qty
+        )
+        self.trades.append(trade)
+        return trade
+
     def _try_match(self) -> List[Trade]:
         """Attempt to match best bid and ask while prices cross.
         
