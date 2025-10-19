@@ -1,6 +1,6 @@
 """Firebase client for persisting orders to Firestore."""
 
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List
 import uuid
 
 
@@ -41,6 +41,14 @@ class FirebaseClient:
             
         Returns:
             Order data dict if found, None otherwise
+        """
+        raise NotImplementedError
+
+    def list_orders(self) -> List[Dict[str, Any]]:
+        """List all orders in the database.
+        
+        Returns:
+            List of all order data dicts
         """
         raise NotImplementedError
 
@@ -95,3 +103,11 @@ class MockFirebaseClient(FirebaseClient):
             Order data dict if found, None otherwise
         """
         return self._store.get(order_id)
+
+    def list_orders(self) -> List[Dict[str, Any]]:
+        """List all orders in memory.
+        
+        Returns:
+            List of all order data dicts
+        """
+        return list(self._store.values())
