@@ -21,6 +21,44 @@ def prompt_side() -> Side:
             print("Invalid input. Please enter 'b' for buy or 's' for sell.")
 
 
+def prompt_float(msg: str) -> float:
+    """Prompt user to enter a positive float value.
+    
+    Args:
+        msg: The prompt message to display
+        
+    Returns:
+        A positive float value entered by user
+    """
+    while True:
+        try:
+            value = float(input(msg).strip())
+            if value > 0:
+                return value
+            print("Please enter a positive number.")
+        except ValueError:
+            print("Invalid input. Please enter a valid number.")
+
+
+def prompt_int(msg: str) -> int:
+    """Prompt user to enter a positive integer value.
+    
+    Args:
+        msg: The prompt message to display
+        
+    Returns:
+        A positive integer value entered by user
+    """
+    while True:
+        try:
+            value = int(input(msg).strip())
+            if value > 0:
+                return value
+            print("Please enter a positive integer.")
+        except ValueError:
+            print("Invalid input. Please enter a valid integer.")
+
+
 def main():
     """Main entry point for the CLI application."""
     print("Limit Order Book CLI")
