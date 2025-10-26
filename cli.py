@@ -99,18 +99,46 @@ def show_trades(order_book: OrderBook):
     print("---------------------\n")
 
 
-def main():
-    """Main entry point for the CLI application."""
-    print("Limit Order Book CLI")
-    print("====================")
-    print()
-    print("Commands:")
+def print_menu():
+    """Print the command menu."""
+    print("\nCommands:")
     print("  1) Add order")
     print("  2) Cancel order")
     print("  3) Show top of book")
     print("  4) Show trades")
     print("  q) Quit")
-    print()
+
+
+def main():
+    """Main entry point for the CLI application."""
+    print("Limit Order Book CLI")
+    print("====================")
+    
+    # Initialize components
+    firebase_client = MockFirebaseClient()
+    order_book = OrderBook()
+    
+    print_menu()
+    
+    while True:
+        choice = input("\nEnter command: ").strip().lower()
+        
+        if choice == 'q':
+            print("Goodbye!")
+            break
+        elif choice == '1':
+            # Add order - to be implemented
+            print("Add order - coming soon")
+        elif choice == '2':
+            # Cancel order - to be implemented
+            print("Cancel order - coming soon")
+        elif choice == '3':
+            show_book(order_book)
+        elif choice == '4':
+            show_trades(order_book)
+        else:
+            print("Invalid command. Please try again.")
+            print_menu()
 
 
 if __name__ == "__main__":
