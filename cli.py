@@ -80,6 +80,25 @@ def show_book(order_book: OrderBook):
     print("-------------------\n")
 
 
+def show_trades(order_book: OrderBook):
+    """Display all executed trades.
+    
+    Args:
+        order_book: The OrderBook instance containing trades
+    """
+    trades = order_book.trades
+    
+    print("\n--- Trade History ---")
+    if not trades:
+        print("No trades executed yet.")
+    else:
+        for i, trade in enumerate(trades, 1):
+            print(f"{i}. {trade.qty} @ ${trade.price:.2f}")
+            print(f"   Buy: {trade.buy_order_id[:8]}...")
+            print(f"   Sell: {trade.sell_order_id[:8]}...")
+    print("---------------------\n")
+
+
 def main():
     """Main entry point for the CLI application."""
     print("Limit Order Book CLI")
