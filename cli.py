@@ -59,6 +59,27 @@ def prompt_int(msg: str) -> int:
             print("Invalid input. Please enter a valid integer.")
 
 
+def show_book(order_book: OrderBook):
+    """Display the current top of book (best bid and ask).
+    
+    Args:
+        order_book: The OrderBook instance to display
+    """
+    best_bid, best_ask = order_book.top_of_book()
+    
+    print("\n--- Top of Book ---")
+    if best_bid:
+        print(f"Best Bid: ${best_bid.price:.2f} x {best_bid.qty}")
+    else:
+        print("Best Bid: None")
+    
+    if best_ask:
+        print(f"Best Ask: ${best_ask.price:.2f} x {best_ask.qty}")
+    else:
+        print("Best Ask: None")
+    print("-------------------\n")
+
+
 def main():
     """Main entry point for the CLI application."""
     print("Limit Order Book CLI")
