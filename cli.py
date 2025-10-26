@@ -109,6 +109,52 @@ def print_menu():
     print("  q) Quit")
 
 
+def add_order(firebase_client: MockFirebaseClient, order_book: OrderBook):
+    """Handle adding a new order.
+    
+    Args:
+        firebase_client: Firebase client for persistence
+        order_book: OrderBook for matching
+    """
+    print("\n--- Add New Order ---")
+    
+    user_id = input("User ID: ").strip() or "default_user"
+    side = prompt_side()
+    price = prompt_float("Price: $")
+    qty = prompt_int("Quantity: ")
+    
+    # Create order
+    order_id = new_order_id()
+    order = Order(
+        id=order_id,
+        user_id=user_id,
+        side=side,
+        price=price,
+        qty=qty
+    )
+    
+    # Save to Firebase
+    order_data = {
+        'id': order_id,
+        'user_id': user_id,
+        'side': side.value,
+        'price': price,
+        'qty': qty
+    }
+    firebase_client.create_order(order_data)
+    
+    # Add to order book and get any trades
+    trades = order_book.add_order(order)
+    
+    print(f"\nOrder created: {order_id[:8]}...")
+    print(f"  {side.value} {qty} @ ${price:.2f}")
+    
+    if trades:
+        print(f"\n{len(trades)} trade(s) executed!")
+        for trade in trades:
+            print(f"  Matched: {trade.qty} @ ${trade.price:.2f}")
+
+
 def main():
     """Main entry point for the CLI application."""
     print("Limit Order Book CLI")
@@ -127,8 +173,7 @@ def main():
             print("Goodbye!")
             break
         elif choice == '1':
-            # Add order - to be implemented
-            print("Add order - coming soon")
+            add_order(firebase_client, order_book)
         elif choice == '2':
             # Cancel order - to be implemented
             print("Cancel order - coming soon")
