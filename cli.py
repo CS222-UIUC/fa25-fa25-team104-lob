@@ -155,6 +155,30 @@ def add_order(firebase_client: MockFirebaseClient, order_book: OrderBook):
             print(f"  Matched: {trade.qty} @ ${trade.price:.2f}")
 
 
+def cancel_order(firebase_client: MockFirebaseClient, order_book: OrderBook):
+    """Handle cancelling an existing order.
+    
+    Args:
+        firebase_client: Firebase client for persistence
+        order_book: OrderBook containing the order
+    """
+    print("\n--- Cancel Order ---")
+    
+    order_id = input("Order ID: ").strip()
+    
+    if not order_id:
+        print("Error: Order ID is required.")
+        return
+    
+    # Try to cancel in order book
+    if order_book.cancel_order(order_id):
+        # Also remove from Firebase
+        firebase_client.delete_order(order_id)
+        print(f"Order {order_id[:8]}... cancelled successfully.")
+    else:
+        print(f"Error: Order {order_id[:8]}... not found.")
+
+
 def main():
     """Main entry point for the CLI application."""
     print("Limit Order Book CLI")
@@ -175,8 +199,7 @@ def main():
         elif choice == '1':
             add_order(firebase_client, order_book)
         elif choice == '2':
-            # Cancel order - to be implemented
-            print("Cancel order - coming soon")
+            cancel_order(firebase_client, order_book)
         elif choice == '3':
             show_book(order_book)
         elif choice == '4':
