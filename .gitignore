@@ -17,3 +17,6 @@ venv/
 # Project specific
 .backup/
 
+# Note: serviceAccount.json is tracked for this project
+# In production, you would add it here:
+# serviceAccount.json
