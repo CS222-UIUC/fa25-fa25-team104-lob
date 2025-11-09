@@ -2,6 +2,7 @@
 
 from typing import Dict, Any, Optional, List
 import uuid
+import time
 
 import firebase_admin
 from firebase_admin import credentials, firestore
@@ -87,6 +88,9 @@ class RealFirebaseClient(FirebaseClient):
         """
         order_id = order_data.get('id') or uuid.uuid4().hex
         order_data['id'] = order_id
+        # Add timestamp if not present
+        if 'created_at' not in order_data:
+            order_data['created_at'] = time.time()
         self._collection.document(order_id).set(order_data)
         return order_id
 
@@ -153,6 +157,9 @@ class MockFirebaseClient(FirebaseClient):
         # Generate ID if not provided
         order_id = order_data.get('id') or uuid.uuid4().hex
         order_data['id'] = order_id
+        # Add timestamp if not present
+        if 'created_at' not in order_data:
+            order_data['created_at'] = time.time()
         self._store[order_id] = order_data.copy()
         return order_id
 
