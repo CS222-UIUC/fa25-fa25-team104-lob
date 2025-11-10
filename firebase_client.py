@@ -48,6 +48,18 @@ class FirebaseClient:
         """
         raise NotImplementedError
 
+    def update_order(self, order_id: str, updates: Dict[str, Any]) -> bool:
+        """Update an order in the database.
+        
+        Args:
+            order_id: The ID of the order to update
+            updates: Dictionary of fields to update
+            
+        Returns:
+            True if updated, False if not found
+        """
+        raise NotImplementedError
+
     def list_orders(self) -> List[Dict[str, Any]]:
         """List all orders in the database.
         
@@ -124,6 +136,24 @@ class RealFirebaseClient(FirebaseClient):
             return doc.to_dict()
         return None
 
+    def update_order(self, order_id: str, updates: Dict[str, Any]) -> bool:
+        """Update an order in Firestore.
+        
+        Args:
+            order_id: The ID of the order to update
+            updates: Dictionary of fields to update
+            
+        Returns:
+            True if updated, False if not found
+        """
+        doc_ref = self._collection.document(order_id)
+        doc = doc_ref.get()
+        if doc.exists:
+            updates['updated_at'] = time.time()
+            doc_ref.update(updates)
+            return True
+        return False
+
     def list_orders(self) -> List[Dict[str, Any]]:
         """List all orders from Firestore.
         
@@ -187,6 +217,22 @@ class MockFirebaseClient(FirebaseClient):
             Order data dict if found, None otherwise
         """
         return self._store.get(order_id)
+
+    def update_order(self, order_id: str, updates: Dict[str, Any]) -> bool:
+        """Update an order in memory.
+        
+        Args:
+            order_id: The ID of the order to update
+            updates: Dictionary of fields to update
+            
+        Returns:
+            True if updated, False if not found
+        """
+        if order_id in self._store:
+            updates['updated_at'] = time.time()
+            self._store[order_id].update(updates)
+            return True
+        return False
 
     def list_orders(self) -> List[Dict[str, Any]]:
         """List all orders in memory.
