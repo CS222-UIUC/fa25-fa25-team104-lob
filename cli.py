@@ -99,6 +99,27 @@ def show_trades(order_book: OrderBook):
     print("---------------------\n")
 
 
+def show_orders(firebase_client: MockFirebaseClient):
+    """Display all orders stored in Firebase.
+    
+    Args:
+        firebase_client: Firebase client containing orders
+    """
+    orders = firebase_client.list_orders()
+    
+    print("\n--- All Orders ---")
+    if not orders:
+        print("No orders in the system.")
+    else:
+        for order in orders:
+            side = order.get('side', 'UNKNOWN')
+            price = order.get('price', 0)
+            qty = order.get('qty', 0)
+            order_id = order.get('id', 'unknown')[:8]
+            print(f"  {order_id}... {side} {qty} @ ${price:.2f}")
+    print("------------------\n")
+
+
 def print_menu():
     """Print the command menu."""
     print("\nCommands:")
@@ -106,6 +127,7 @@ def print_menu():
     print("  2) Cancel order")
     print("  3) Show top of book")
     print("  4) Show trades")
+    print("  5) Show all orders")
     print("  q) Quit")
 
 
@@ -204,6 +226,8 @@ def main():
             show_book(order_book)
         elif choice == '4':
             show_trades(order_book)
+        elif choice == '5':
+            show_orders(firebase_client)
         else:
             print("Invalid command. Please try again.")
             print_menu()
