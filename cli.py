@@ -89,7 +89,7 @@ def show_book(order_book: OrderBook):
 
 
 def show_trades(order_book: OrderBook):
-    """Display all executed trades.
+    """Display all executed trades with statistics.
     
     Args:
         order_book: The OrderBook instance containing trades
@@ -100,10 +100,24 @@ def show_trades(order_book: OrderBook):
     if not trades:
         print("No trades executed yet.")
     else:
+        total_volume = 0
+        total_value = 0
+        
         for i, trade in enumerate(trades, 1):
             print(f"{i}. {trade.qty} @ ${trade.price:.2f}")
             print(f"   Buy: {trade.buy_order_id[:8]}...")
             print(f"   Sell: {trade.sell_order_id[:8]}...")
+            total_volume += trade.qty
+            total_value += trade.qty * trade.price
+        
+        print("\n--- Statistics ---")
+        print(f"Total trades: {len(trades)}")
+        print(f"Total volume: {total_volume}")
+        print(f"Total value: ${total_value:.2f}")
+        if trades:
+            avg_price = total_value / total_volume
+            print(f"Average price: ${avg_price:.2f}")
+    
     print("---------------------\n")
 
 
