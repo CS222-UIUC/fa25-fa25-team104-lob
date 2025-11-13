@@ -77,6 +77,14 @@ def show_book(order_book: OrderBook):
         print(f"Best Ask: ${best_ask.price:.2f} x {best_ask.qty}")
     else:
         print("Best Ask: None")
+    
+    # Calculate and display spread
+    if best_bid and best_ask:
+        spread = best_ask.price - best_bid.price
+        mid_price = (best_bid.price + best_ask.price) / 2
+        spread_pct = (spread / mid_price) * 100 if mid_price > 0 else 0
+        print(f"Spread: ${spread:.2f} ({spread_pct:.2f}%)")
+    
     print("-------------------\n")
 
 
