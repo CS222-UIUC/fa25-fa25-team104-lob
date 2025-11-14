@@ -190,41 +190,46 @@ def add_order(firebase_client: MockFirebaseClient, order_book: OrderBook):
     """
     print("\n--- Add New Order ---")
     
-    user_id = input("User ID: ").strip() or "default_user"
-    side = prompt_side()
-    price = prompt_float("Price: $")
-    qty = prompt_int("Quantity: ")
-    
-    # Create order
-    order_id = new_order_id()
-    order = Order(
-        id=order_id,
-        user_id=user_id,
-        side=side,
-        price=price,
-        qty=qty
-    )
-    
-    # Save to Firebase
-    order_data = {
-        'id': order_id,
-        'user_id': user_id,
-        'side': side.value,
-        'price': price,
-        'qty': qty
-    }
-    firebase_client.create_order(order_data)
-    
-    # Add to order book and get any trades
-    trades = order_book.add_order(order)
-    
-    print(f"\nOrder created: {order_id[:8]}...")
-    print(f"  {side.value} {qty} @ ${price:.2f}")
-    
-    if trades:
-        print(f"\n{len(trades)} trade(s) executed!")
-        for trade in trades:
-            print(f"  Matched: {trade.qty} @ ${trade.price:.2f}")
+    try:
+        user_id = input("User ID: ").strip() or "default_user"
+        side = prompt_side()
+        price = prompt_float("Price: $")
+        qty = prompt_int("Quantity: ")
+        
+        # Create order
+        order_id = new_order_id()
+        order = Order(
+            id=order_id,
+            user_id=user_id,
+            side=side,
+            price=price,
+            qty=qty
+        )
+        
+        # Save to Firebase
+        order_data = {
+            'id': order_id,
+            'user_id': user_id,
+            'side': side.value,
+            'price': price,
+            'qty': qty
+        }
+        firebase_client.create_order(order_data)
+        
+        # Add to order book and get any trades
+        trades = order_book.add_order(order)
+        
+        print(f"\nOrder created: {order_id[:8]}...")
+        print(f"  {side.value} {qty} @ ${price:.2f}")
+        
+        if trades:
+            print(f"\n{len(trades)} trade(s) executed!")
+            for trade in trades:
+                print(f"  Matched: {trade.qty} @ ${trade.price:.2f}")
+    except KeyboardInterrupt:
+        print("\nOrder cancelled.")
+    except Exception as e:
+        print(f"\nError creating order: {e}")
 
 
 def cancel_order(firebase_client: MockFirebaseClient, order_book: OrderBook):
@@ -236,19 +241,24 @@ def cancel_order(firebase_client: MockFirebaseClient, order_book: OrderBook):
     """
     print("\n--- Cancel Order ---")
     
-    order_id = input("Order ID: ").strip()
-    
-    if not order_id:
-        print("Error: Order ID is required.")
-        return
-    
-    # Try to cancel in order book
-    if order_book.cancel_order(order_id):
-        # Also remove from Firebase
-        firebase_client.delete_order(order_id)
-        print(f"Order {order_id[:8]}... cancelled successfully.")
-    else:
-        print(f"Error: Order {order_id[:8]}... not found.")
+    try:
+        order_id = input("Order ID: ").strip()
+        
+        if not order_id:
+            print("Error: Order ID is required.")
+            return
+        
+        # Try to cancel in order book
+        if order_book.cancel_order(order_id):
+            # Also remove from Firebase
+            firebase_client.delete_order(order_id)
+            print(f"Order {order_id[:8]}... cancelled successfully.")
+        else:
+            print(f"Error: Order {order_id[:8]}... not found.")
+    except KeyboardInterrupt:
+        print("\nCancellation aborted.")
+    except Exception as e:
+        print(f"\nError cancelling order: {e}")
 
 
 def main():
@@ -263,26 +273,32 @@ def main():
     print_menu()
     
     while True:
-        choice = input("\nEnter command: ").strip().lower()
-        
-        if choice == 'q':
-            print("Goodbye!")
+        try:
+            choice = input("\nEnter command: ").strip().lower()
+            
+            if choice == 'q':
+                print("Goodbye!")
+                break
+            elif choice == '1':
+                add_order(firebase_client, order_book)
+            elif choice == '2':
+                cancel_order(firebase_client, order_book)
+            elif choice == '3':
+                show_book(order_book)
+            elif choice == '4':
+                show_trades(order_book)
+            elif choice == '5':
+                show_orders(firebase_client)
+            elif choice == 'h':
+                show_help()
+            else:
+                print("Invalid command. Please try again.")
+                print_menu()
+        except KeyboardInterrupt:
+            print("\n\nUse 'q' to quit.")
+        except EOFError:
+            print("\nGoodbye!")
             break
-        elif choice == '1':
-            add_order(firebase_client, order_book)
-        elif choice == '2':
-            cancel_order(firebase_client, order_book)
-        elif choice == '3':
-            show_book(order_book)
-        elif choice == '4':
-            show_trades(order_book)
-        elif choice == '5':
-            show_orders(firebase_client)
-        elif choice == 'h':
-            show_help()
-        else:
-            print("Invalid command. Please try again.")
-            print_menu()
 
 
 if __name__ == "__main__":
