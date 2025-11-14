@@ -150,7 +150,35 @@ def print_menu():
     print("  3) Show top of book")
     print("  4) Show trades")
     print("  5) Show all orders")
+    print("  h) Help")
     print("  q) Quit")
+
+
+def show_help():
+    """Display detailed help information."""
+    print("\n" + "=" * 50)
+    print("LIMIT ORDER BOOK - HELP")
+    print("=" * 50)
+    print()
+    print("This is a simple limit order book implementation.")
+    print()
+    print("COMMANDS:")
+    print("---------")
+    print("1) Add order    - Create a new buy or sell order")
+    print("2) Cancel order - Cancel an existing order by ID")
+    print("3) Top of book  - Show best bid and ask prices")
+    print("4) Show trades  - Display executed trades history")
+    print("5) All orders   - List all active orders")
+    print("h) Help         - Show this help message")
+    print("q) Quit         - Exit the application")
+    print()
+    print("ORDER MATCHING:")
+    print("---------------")
+    print("Orders are matched when a buy price >= sell price.")
+    print("Matching uses price-time priority (best price first,")
+    print("then earliest order at same price).")
+    print()
+    print("=" * 50 + "\n")
 
 
 def add_order(firebase_client: MockFirebaseClient, order_book: OrderBook):
@@ -250,6 +278,8 @@ def main():
             show_trades(order_book)
         elif choice == '5':
             show_orders(firebase_client)
+        elif choice == 'h':
+            show_help()
         else:
             print("Invalid command. Please try again.")
             print_menu()
