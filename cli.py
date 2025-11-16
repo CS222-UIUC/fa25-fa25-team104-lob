@@ -68,6 +68,9 @@ def show_book(order_book: OrderBook):
     best_bid, best_ask = order_book.top_of_book()
     
     print("\n--- Top of Book ---")
+    print(f"Active orders: {order_book.order_count()}")
+    print()
+    
     if best_bid:
         print(f"Best Bid: ${best_bid.price:.2f} x {best_bid.qty}")
     else:
