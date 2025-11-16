@@ -115,6 +115,14 @@ class OrderBook:
         """
         return self._orders.get(order_id)
 
+    def order_count(self) -> int:
+        """Get the number of active orders in the book.
+        
+        Returns:
+            The count of active orders
+        """
+        return len(self._orders)
+
     def top_of_book(self) -> Tuple[Optional[Order], Optional[Order]]:
         """Get the best bid and ask orders.
         
