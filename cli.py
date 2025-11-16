@@ -141,7 +141,8 @@ def show_orders(firebase_client: MockFirebaseClient):
             price = order.get('price', 0)
             qty = order.get('qty', 0)
             order_id = order.get('id', 'unknown')[:8]
-            print(f"  {order_id}... {side} {qty} @ ${price:.2f}")
+            user_id = order.get('user_id', 'unknown')
+            print(f"  {order_id}... [{user_id}] {side} {qty} @ ${price:.2f}")
     print("------------------\n")
 
 
