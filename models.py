@@ -12,6 +12,14 @@ class Side(Enum):
     SELL = "SELL"
 
 
+class OrderStatus(Enum):
+    """Represents the status of an order."""
+    OPEN = "OPEN"
+    PARTIAL = "PARTIAL"
+    FILLED = "FILLED"
+    CANCELLED = "CANCELLED"
+
+
 @dataclass
 class Order:
     """Represents a limit order in the order book.
@@ -24,6 +32,8 @@ class Order:
         qty: Quantity of shares/units
         ts: Timestamp when order was created
         seq: Sequence number for FIFO ordering at same price
+        original_qty: Original quantity when order was placed
+        status: Current status of the order
     """
     id: str
     user_id: str
@@ -32,6 +42,13 @@ class Order:
     qty: int
     ts: float = field(default_factory=lambda: time.time())
     seq: int = 0
+    original_qty: int = 0
+    status: OrderStatus = OrderStatus.OPEN
+
+    def __post_init__(self):
+        """Set original_qty if not provided."""
+        if self.original_qty == 0:
+            self.original_qty = self.qty
 
 
 @dataclass
