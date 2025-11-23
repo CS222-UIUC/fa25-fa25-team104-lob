@@ -3,6 +3,7 @@
 from models import Order, Side, new_order_id
 from order_book import OrderBook
 from firebase_client import MockFirebaseClient
+from utils import validate_price, validate_quantity, format_price, format_quantity
 
 
 def prompt_side() -> Side:
@@ -33,9 +34,9 @@ def prompt_float(msg: str) -> float:
     while True:
         try:
             value = float(input(msg).strip())
-            if value > 0:
+            if validate_price(value):
                 return value
-            print("Please enter a positive number.")
+            print("Please enter a valid price (0 < price <= 1,000,000).")
         except ValueError:
             print("Invalid input. Please enter a valid number.")
 
@@ -52,9 +53,9 @@ def prompt_int(msg: str) -> int:
     while True:
         try:
             value = int(input(msg).strip())
-            if value > 0:
+            if validate_quantity(value):
                 return value
-            print("Please enter a positive integer.")
+            print("Please enter a valid quantity (0 < qty <= 1,000,000).")
         except ValueError:
             print("Invalid input. Please enter a valid integer.")
 
@@ -72,12 +73,12 @@ def show_book(order_book: OrderBook):
     print()
     
     if best_bid:
-        print(f"Best Bid: ${best_bid.price:.2f} x {best_bid.qty}")
+        print(f"Best Bid: {format_price(best_bid.price)} x {format_quantity(best_bid.qty)}")
     else:
         print("Best Bid: None")
     
     if best_ask:
-        print(f"Best Ask: ${best_ask.price:.2f} x {best_ask.qty}")
+        print(f"Best Ask: {format_price(best_ask.price)} x {format_quantity(best_ask.qty)}")
     else:
         print("Best Ask: None")
     
@@ -86,7 +87,7 @@ def show_book(order_book: OrderBook):
         spread = best_ask.price - best_bid.price
         mid_price = (best_bid.price + best_ask.price) / 2
         spread_pct = (spread / mid_price) * 100 if mid_price > 0 else 0
-        print(f"Spread: ${spread:.2f} ({spread_pct:.2f}%)")
+        print(f"Spread: {format_price(spread)} ({spread_pct:.2f}%)")
     
     print("-------------------\n")
 
@@ -107,7 +108,7 @@ def show_trades(order_book: OrderBook):
         total_value = 0
         
         for i, trade in enumerate(trades, 1):
-            print(f"{i}. {trade.qty} @ ${trade.price:.2f}")
+            print(f"{i}. {format_quantity(trade.qty)} @ {format_price(trade.price)}")
             print(f"   Buy: {trade.buy_order_id[:8]}...")
             print(f"   Sell: {trade.sell_order_id[:8]}...")
             total_volume += trade.qty
@@ -115,11 +116,11 @@ def show_trades(order_book: OrderBook):
         
         print("\n--- Statistics ---")
         print(f"Total trades: {len(trades)}")
-        print(f"Total volume: {total_volume}")
-        print(f"Total value: ${total_value:.2f}")
+        print(f"Total volume: {format_quantity(total_volume)}")
+        print(f"Total value: {format_price(total_value)}")
         if trades:
             avg_price = total_value / total_volume
-            print(f"Average price: ${avg_price:.2f}")
+            print(f"Average price: {format_price(avg_price)}")
     
     print("---------------------\n")
 
@@ -142,7 +143,7 @@ def show_orders(firebase_client: MockFirebaseClient):
             qty = order.get('qty', 0)
             order_id = order.get('id', 'unknown')[:8]
             user_id = order.get('user_id', 'unknown')
-            print(f"  {order_id}... [{user_id}] {side} {qty} @ ${price:.2f}")
+            print(f"  {order_id}... [{user_id}] {side} {format_quantity(qty)} @ {format_price(price)}")
     print("------------------\n")
 
 
@@ -224,12 +225,12 @@ def add_order(firebase_client: MockFirebaseClient, order_book: OrderBook):
         trades = order_book.add_order(order)
         
         print(f"\nOrder created: {order_id[:8]}...")
-        print(f"  {side.value} {qty} @ ${price:.2f}")
+        print(f"  {side.value} {format_quantity(qty)} @ {format_price(price)}")
         
         if trades:
             print(f"\n{len(trades)} trade(s) executed!")
             for trade in trades:
-                print(f"  Matched: {trade.qty} @ ${trade.price:.2f}")
+                print(f"  Matched: {format_quantity(trade.qty)} @ {format_price(trade.price)}")
     except KeyboardInterrupt:
         print("\nOrder cancelled.")
     except Exception as e:
