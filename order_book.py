@@ -2,7 +2,7 @@
 
 import heapq
 from typing import List, Dict, Optional, Tuple
-from models import Order, Trade, Side
+from models import Order, Trade, Side, OrderStatus
 
 
 class OrderBook:
@@ -100,6 +100,8 @@ class OrderBook:
             True if order was found and cancelled, False otherwise
         """
         if order_id in self._orders:
+            order = self._orders[order_id]
+            order.status = OrderStatus.CANCELLED
             del self._orders[order_id]
             return True
         return False
@@ -149,13 +151,20 @@ class OrderBook:
         buy.qty -= qty
         sell.qty -= qty
         
-        # Remove fully filled orders from tracking
+        # Update order statuses
         if buy.qty == 0:
+            buy.status = OrderStatus.FILLED
             if buy.id in self._orders:
                 del self._orders[buy.id]
+        else:
+            buy.status = OrderStatus.PARTIAL
+            
         if sell.qty == 0:
+            sell.status = OrderStatus.FILLED
             if sell.id in self._orders:
                 del self._orders[sell.id]
+        else:
+            sell.status = OrderStatus.PARTIAL
         
         # Create and record the trade
         trade = Trade(
