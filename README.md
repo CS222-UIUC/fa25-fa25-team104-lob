@@ -18,6 +18,7 @@ This project implements a basic limit order book system that supports:
 - **Firebase Integration**: Persist orders to Firestore database
 - **Mock Client**: In-memory mock for testing without Firebase
 - **CLI Interface**: Interactive command-line interface
+- **Order Status Tracking**: Track orders through OPEN, PARTIAL, FILLED, CANCELLED states
 
 ## Installation
 
@@ -42,12 +43,42 @@ python cli.py
 - `h` - Help
 - `q` - Quit
 
+## Architecture
+
+```
+┌─────────────────────────────────────────────────┐
+│                    CLI (cli.py)                 │
+│         User Interface & Command Handler        │
+└─────────────────────┬───────────────────────────┘
+                      │
+         ┌────────────┼────────────┐
+         │            │            │
+         ▼            ▼            ▼
+┌─────────────┐ ┌───────────┐ ┌─────────────────┐
+│ OrderBook   │ │  Models   │ │ FirebaseClient  │
+│ (Matching)  │ │  (Data)   │ │ (Persistence)   │
+└─────────────┘ └───────────┘ └─────────────────┘
+```
+
 ## Project Structure
 
-- `models.py` - Data models (Order, Trade, Side)
+- `models.py` - Data models (Order, Trade, Side, OrderStatus)
 - `order_book.py` - Order book matching engine
 - `firebase_client.py` - Firebase client implementations
 - `cli.py` - Command-line interface
+- `utils.py` - Validation and formatting utilities
+
+## Order Matching
+
+The order book uses a price-time priority algorithm:
+
+1. **Price Priority**: Best price orders are matched first
+   - Highest bid price for buy orders
+   - Lowest ask price for sell orders
+
+2. **Time Priority**: At the same price level, earlier orders are matched first
+
+3. **Trade Price**: Uses the passive order's price (the order already in the book)
 
 ## Team Members
 
