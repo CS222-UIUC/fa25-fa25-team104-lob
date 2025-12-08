@@ -5,6 +5,8 @@ from order_book import OrderBook
 from firebase_client import MockFirebaseClient
 from utils import validate_price, validate_quantity, format_price, format_quantity
 
+__version__ = "1.0.0"
+
 
 def prompt_side() -> Side:
     """Prompt user to enter order side (buy/sell).
@@ -266,15 +268,27 @@ def cancel_order(firebase_client: MockFirebaseClient, order_book: OrderBook):
         print(f"\nError cancelling order: {e}")
 
 
+def print_banner():
+    """Print the startup banner."""
+    print()
+    print("╔════════════════════════════════════════════╗")
+    print("║         LIMIT ORDER BOOK CLI               ║")
+    print(f"║              Version {__version__}                  ║")
+    print("║                                            ║")
+    print("║  CS 222 - Software Design Lab              ║")
+    print("╚════════════════════════════════════════════╝")
+    print()
+
+
 def main():
     """Main entry point for the CLI application."""
-    print("Limit Order Book CLI")
-    print("====================")
+    print_banner()
     
     # Initialize components
     firebase_client = MockFirebaseClient()
     order_book = OrderBook()
     
+    print("Type 'h' for help or 'q' to quit.")
     print_menu()
     
     while True:
