@@ -4,8 +4,8 @@ from typing import Dict, Any, Optional, List
 import uuid
 import time
 
-import firebase_admin
-from firebase_admin import credentials, firestore
+# Firebase imports are done inside RealFirebaseClient to allow
+# MockFirebaseClient to work without firebase-admin installed
 
 
 class FirebaseClient:
@@ -81,6 +81,9 @@ class RealFirebaseClient(FirebaseClient):
         Args:
             credentials_path: Path to service account JSON file
         """
+        import firebase_admin
+        from firebase_admin import credentials, firestore
+        
         # Initialize Firebase if not already done
         if not firebase_admin._apps:
             cred = credentials.Certificate(credentials_path)
