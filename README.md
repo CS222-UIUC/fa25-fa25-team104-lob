@@ -83,7 +83,9 @@ The order book uses a price-time priority algorithm:
 ## Team Members
 
 - Julian Castaneda
-- Allan
+- Allan Luo
+- Hamza Patel
+- Haonan Wang
 
 ## Course
 
