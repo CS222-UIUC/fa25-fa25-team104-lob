@@ -141,3 +141,39 @@ def delete_trade(trade_id: str):
     """Delete a trade"""
     db.collection("trades").document(trade_id).delete()
     print(f"Trade {trade_id} deleted.")
+
+
+
+
+if __name__ == "__main__":
+    print(" Firestore CRUD test starting...\n")
+
+    # Create traders
+    t1 = create_trader("Alice", 50000, 2.5)
+    # t2 = create_trader("Bob", 20000, 5)
+
+    # # Create orders
+    # o1 = create_order(t1, "BUY", "LIMIT", 10, 101.5)
+    # o2 = create_order(t2, "SELL", "LIMIT", 10, 101.5)
+
+    # # Create trade
+    # tr = create_trade(o1, o2, t1, t2, price=101.5, quantity=5)
+
+    # print("\n--- Reading back ---")
+    # get_trader(t1)
+    # get_order(o1)
+    # get_trade(tr)
+
+    # print("\n--- Updating values ---")
+    # update_trader(t1, {"balanceUSD": 48000})
+    # update_order(o1, {"status": "FILLED", "remainingQuantity": 0})
+    # update_trade(tr, {"price": 101.6})
+
+    # print("\n--- Deleting everything ---")
+    # delete_trade(tr)
+    # delete_order(o1)
+    # delete_order(o2)
+    # delete_trader(t1)
+    # delete_trader(t2)
+
+    print("\n Done! Check your Firestore console for confirmation.")
