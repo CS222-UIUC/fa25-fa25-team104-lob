@@ -1,57 +1,224 @@
+"""Order book implementation with price-time priority matching."""
+
 import heapq
 from typing import List, Dict, Optional, Tuple
-from models import Order, Trade, Side
+from models import Order, Trade, Side, OrderStatus
 
 
 class OrderBook:
+    """A limit order book that matches buy and sell orders.
+    
+    Uses max heap for bids (buy orders) and min heap for asks (sell orders).
+    Orders at the same price level are matched in FIFO order using sequence numbers.
+    """
+    
     def __init__(self):
-        """Initialize min/max heaps, active order map, trade list, and sequence counter."""
-        # self._bids = max heap (use negative price)
-        # self._asks = min heap
-        # self._orders = {order_id: Order}
-        # self._seq = 0
-        # self.trades = []
-        pass
+        """Initialize the order book with empty heaps and order tracking."""
+        # Max heap for bids - use negative price for max heap behavior
+        self._bids: List[Tuple[float, int, Order]] = []
+        # Min heap for asks
+        self._asks: List[Tuple[float, int, Order]] = []
+        # Map of order_id -> Order for quick lookup
+        self._orders: Dict[str, Order] = {}
+        # Sequence counter for FIFO ordering at same price
+        self._seq = 0
+        # List of all executed trades
+        self.trades: List[Trade] = []
 
     def _next_seq(self) -> int:
-        """Return next sequence number for FIFO ordering."""
-        # increment internal counter and return
-        pass
+        """Get the next sequence number for FIFO ordering.
+        
+        Returns:
+            The next sequence number
+        """
+        self._seq += 1
+        return self._seq
+
+    def _clean_top_bid(self) -> Optional[Order]:
+        """Remove cancelled/filled orders from top of bid heap.
+        
+        Returns:
+            The top valid bid order, or None if heap is empty
+        """
+        while self._bids:
+            neg_price, seq, order = self._bids[0]
+            # Check if order is still active
+            if order.id in self._orders and order.qty > 0:
+                return order
+            heapq.heappop(self._bids)
+        return None
+
+    def _clean_top_ask(self) -> Optional[Order]:
+        """Remove cancelled/filled orders from top of ask heap.
+        
+        Returns:
+            The top valid ask order, or None if heap is empty
+        """
+        while self._asks:
+            price, seq, order = self._asks[0]
+            # Check if order is still active
+            if order.id in self._orders and order.qty > 0:
+                return order
+            heapq.heappop(self._asks)
+        return None
 
     def add_order(self, order: Order) -> List[Trade]:
-        """Add order to book and attempt matching."""
-        # assign seq number
-        # add to correct heap depending on buy/sell
-        # call private _try_match() to see if trade occurs
-        # return list of trades generated
-        pass
+        """Add an order to the book and attempt matching.
+        
+        Args:
+            order: The order to add
+            
+        Returns:
+            List of trades that resulted from matching
+        """
+        # Assign sequence number for FIFO ordering
+        order.seq = self._next_seq()
+        
+        # Add to order tracking
+        self._orders[order.id] = order
+        
+        # Add to appropriate heap based on side
+        if order.side == Side.BUY:
+            # Use negative price for max heap behavior
+            heapq.heappush(self._bids, (-order.price, order.seq, order))
+        else:
+            heapq.heappush(self._asks, (order.price, order.seq, order))
+        
+        # Try to match orders
+        return self._try_match()
 
     def cancel_order(self, order_id: str) -> bool:
-        """Cancel an order if it exists."""
-        # remove from self._orders (lazy cancel)
-        # return True if found, False otherwise
-        pass
+        """Cancel an order by ID using lazy deletion.
+        
+        The order is removed from the tracking dict but left in the heap.
+        It will be cleaned up when it reaches the top of the heap.
+        
+        Args:
+            order_id: The ID of the order to cancel
+            
+        Returns:
+            True if order was found and cancelled, False otherwise
+        """
+        if order_id in self._orders:
+            order = self._orders[order_id]
+            order.status = OrderStatus.CANCELLED
+            del self._orders[order_id]
+            return True
+        return False
+
+    def get_order(self, order_id: str) -> Optional[Order]:
+        """Get an order by ID.
+        
+        Args:
+            order_id: The ID of the order to retrieve
+            
+        Returns:
+            The Order if found, None otherwise
+        """
+        return self._orders.get(order_id)
+
+    def order_count(self) -> int:
+        """Get the number of active orders in the book.
+        
+        Returns:
+            The count of active orders
+        """
+        return len(self._orders)
 
     def top_of_book(self) -> Tuple[Optional[Order], Optional[Order]]:
-        """Return best bid and best ask orders."""
-        # peek at top of bid/ask heaps (skip canceled or filled)
-        # return (best_bid_order, best_ask_order)
-        pass
-
-    def _try_match(self) -> List[Trade]:
-        """Attempt to match best bid and ask while prices cross."""
-        # while best_bid.price >= best_ask.price:
-        #   pop top orders
-        #   compute trade qty = min(bid.qty, ask.qty)
-        #   choose trade price (typically passive side)
-        #   call _execute_trade(bid, ask, price, qty)
-        #   push back remaining qty if partial fill
-        # return list of executed trades
-        pass
+        """Get the best bid and ask orders.
+        
+        Returns:
+            Tuple of (best_bid, best_ask), either can be None if no orders
+        """
+        best_bid = self._clean_top_bid()
+        best_ask = self._clean_top_ask()
+        return (best_bid, best_ask)
 
     def _execute_trade(self, buy: Order, sell: Order, price: float, qty: int) -> Trade:
-        """Apply fills, reduce qty, remove if fully filled, and return a Trade object."""
-        # update quantities
-        # remove from self._orders if qty = 0
-        # return new Trade(buy_id, sell_id, price, qty)
-        pass
+        """Execute a trade between a buy and sell order.
+        
+        Args:
+            buy: The buy order
+            sell: The sell order
+            price: The execution price
+            qty: The quantity to trade
+            
+        Returns:
+            The Trade object representing this execution
+        """
+        # Reduce quantities
+        buy.qty -= qty
+        sell.qty -= qty
+        
+        # Update order statuses
+        if buy.qty == 0:
+            buy.status = OrderStatus.FILLED
+            if buy.id in self._orders:
+                del self._orders[buy.id]
+        else:
+            buy.status = OrderStatus.PARTIAL
+            
+        if sell.qty == 0:
+            sell.status = OrderStatus.FILLED
+            if sell.id in self._orders:
+                del self._orders[sell.id]
+        else:
+            sell.status = OrderStatus.PARTIAL
+        
+        # Create and record the trade
+        trade = Trade(
+            buy_order_id=buy.id,
+            sell_order_id=sell.id,
+            price=price,
+            qty=qty
+        )
+        self.trades.append(trade)
+        return trade
+
+    def _try_match(self) -> List[Trade]:
+        """Attempt to match best bid and ask while prices cross.
+        
+        A match occurs when the best bid price >= best ask price.
+        Uses price-time priority: best price first, then earliest order.
+        Trade price is the passive order's price (the one already in the book).
+        
+        Returns:
+            List of trades executed during matching
+        """
+        executed_trades: List[Trade] = []
+        
+        while True:
+            best_bid = self._clean_top_bid()
+            best_ask = self._clean_top_ask()
+            
+            # Check if we can match
+            if best_bid is None or best_ask is None:
+                break
+            if best_bid.price < best_ask.price:
+                break
+            
+            # Prices cross - we have a match!
+            # Pop both orders from heaps
+            heapq.heappop(self._bids)
+            heapq.heappop(self._asks)
+            
+            # Calculate trade quantity and price
+            trade_qty = min(best_bid.qty, best_ask.qty)
+            # Use the passive order's price (earlier order)
+            if best_bid.seq < best_ask.seq:
+                trade_price = best_bid.price
+            else:
+                trade_price = best_ask.price
+            
+            # Execute the trade
+            trade = self._execute_trade(best_bid, best_ask, trade_price, trade_qty)
+            executed_trades.append(trade)
+            
+            # Push back orders with remaining quantity
+            if best_bid.qty > 0:
+                heapq.heappush(self._bids, (-best_bid.price, best_bid.seq, best_bid))
+            if best_ask.qty > 0:
+                heapq.heappush(self._asks, (best_ask.price, best_ask.seq, best_ask))
+        
+        return executed_trades
