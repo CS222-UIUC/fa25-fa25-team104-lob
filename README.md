@@ -5,6 +5,7 @@
 
 ## 2. Technical Architecture
 <img width="846" height="170" alt="image" src="https://github.com/user-attachments/assets/9652b795-63a8-4b49-82e4-0c43099ce2ae" />
+
 - **CLI Frontend:** Looping menu that takes user input and calls backend routes, renders orderbook snapshot using Rich tables
 - **LOB Cache:** Class that stores data from database fetches for frontend use, minimizes unnecessary re-fetches
 - **Backend Python Endpoints:** Firestore routes to facilitate database actions, transactions enable atomic logic (order creation, trade execution, order cancellation)
