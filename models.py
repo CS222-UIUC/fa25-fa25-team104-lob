@@ -14,8 +14,8 @@ class Order:
     id: str
     user_id: str
     side: Side
-    price: float
-    qty: int
+    price: int   # price in integer cents
+    qty: int     # quantity in whole units (integer)
     ts: float = field(default_factory=lambda: time.time())
     seq: int = 0  # assigned by order book for FIFO at same price
 
@@ -24,12 +24,10 @@ class Order:
 class Trade:
     buy_order_id: str
     sell_order_id: str
-    price: float
-    qty: int
+    price: int   # price in cents
+    qty: int     # qty in whole units
     ts: float = field(default_factory=lambda: time.time())
 
 
 def new_order_id() -> str:
-    """Generate a unique order ID."""
-    # return a UUID hex string
-    pass
+    return uuid.uuid4().hex
