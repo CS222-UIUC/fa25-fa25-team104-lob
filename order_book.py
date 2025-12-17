@@ -1,57 +1,22 @@
-import heapq
-from typing import List, Dict, Optional, Tuple
-from models import Order, Trade, Side
+from typing import Optional, List, Dict
 
 
 class OrderBook:
+
     def __init__(self):
-        """Initialize min/max heaps, active order map, trade list, and sequence counter."""
-        # self._bids = max heap (use negative price)
-        # self._asks = min heap
-        # self._orders = {order_id: Order}
-        # self._seq = 0
-        # self.trades = []
-        pass
+        # Depth snapshots loaded from Firestore
+        self.bids: List[Dict[str, int]] = []
+        self.asks: List[Dict[str, int]] = []
 
-    def _next_seq(self) -> int:
-        """Return next sequence number for FIFO ordering."""
-        # increment internal counter and return
-        pass
+        # Trader metadata cached for quick display
+        self.current_trader: Optional[str] = None
+        self.current_name: Optional[str] = None
+        self.all_traders: List[Dict[str, str]] = []
+        self.current_trades: List[Dict[str, int]] = []
+        self.current_trade_history: List[Dict[str, int]] = []
 
-    def add_order(self, order: Order) -> List[Trade]:
-        """Add order to book and attempt matching."""
-        # assign seq number
-        # add to correct heap depending on buy/sell
-        # call private _try_match() to see if trade occurs
-        # return list of trades generated
-        pass
-
-    def cancel_order(self, order_id: str) -> bool:
-        """Cancel an order if it exists."""
-        # remove from self._orders (lazy cancel)
-        # return True if found, False otherwise
-        pass
-
-    def top_of_book(self) -> Tuple[Optional[Order], Optional[Order]]:
-        """Return best bid and best ask orders."""
-        # peek at top of bid/ask heaps (skip canceled or filled)
-        # return (best_bid_order, best_ask_order)
-        pass
-
-    def _try_match(self) -> List[Trade]:
-        """Attempt to match best bid and ask while prices cross."""
-        # while best_bid.price >= best_ask.price:
-        #   pop top orders
-        #   compute trade qty = min(bid.qty, ask.qty)
-        #   choose trade price (typically passive side)
-        #   call _execute_trade(bid, ask, price, qty)
-        #   push back remaining qty if partial fill
-        # return list of executed trades
-        pass
-
-    def _execute_trade(self, buy: Order, sell: Order, price: float, qty: int) -> Trade:
-        """Apply fills, reduce qty, remove if fully filled, and return a Trade object."""
-        # update quantities
-        # remove from self._orders if qty = 0
-        # return new Trade(buy_id, sell_id, price, qty)
-        pass
+        # Cached balances/reserves (all integers)
+        self.current_trader_balance_usd: Optional[int] = None
+        self.current_trader_reserved_usd: Optional[int] = None
+        self.current_trader_balance_instrument: Optional[int] = None
+        self.current_trader_reserved_instrument: Optional[int] = None
