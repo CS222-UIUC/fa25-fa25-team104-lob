@@ -1,11 +1,13 @@
 from models import Order, Side, new_order_id
 from order_book import OrderBook
-from firebase_client import MockFirebaseClient
+from firebase_client import FirestoreClient
+from rich.console import Console
+from rich.table import Table
 
+console = Console()
 
 def prompt_side() -> Side:
     """Ask user for side input."""
-    # prompt until 'b' or 's' entered
     while True:
         side_input = input("Enter side (b for buy, s for sell): ").strip().lower()
         if side_input == "b":
@@ -16,126 +18,201 @@ def prompt_side() -> Side:
             print("Invalid input. Please enter 'b' or 's'.")
 
 
-def prompt_float(msg: str) -> float:
-    """Ask for a float input."""
-    while True:
-        try:
-            return float(input(msg))
-        except ValueError:
-            print("Invalid number. Please enter a valid float.")
-
-
 def prompt_int(msg: str) -> int:
     """Ask for a positive integer input."""
     while True:
         try:
             value = int(input(msg))
-            if value > 0:
-                return value
-            print("Enter a positive integer.")
+            return value
         except ValueError:
             print("Invalid number. Please enter an integer.")
 
 
-def show_book(order_book: OrderBook):
-    """Display current best bid/ask."""
-    # call order_book.top_of_book()
-    # print results nicely
-    top_bid, top_ask = order_book.top_of_book()
-    print("\n--- Top of Book ---")
-    print(f"Best Bid: {top_bid if top_bid else 'None'}")
-    print(f"Best Ask: {top_ask if top_ask else 'None'}")
-    print("-------------------\n")
+def show_book(order_book: OrderBook, levels: int = 10):
+    """Display aggregated book with asks above bids and a mid-price marker."""
+    bids = getattr(order_book, "bids", []) or []
+    asks = getattr(order_book, "asks", []) or []
+
+    table = Table(title="Order Book (cents)", show_lines=False)
+    table.add_column("Side", justify="center")
+    table.add_column("Qty", justify="right")
+    table.add_column("Px (c)", justify="right")
+
+    ask_slice = asks[:levels]
+    for level in reversed(ask_slice):
+        qty = level.get("quantity")
+        price = level.get("price")
+        table.add_row("ASK", str(qty) if qty is not None else "", str(price) if price is not None else "", style="red")
+
+    best_bid = bids[0]["price"] if bids else None
+    best_ask = asks[0]["price"] if asks else None
+    if best_bid is not None and best_ask is not None:
+        mid = (int(best_bid) + int(best_ask)) / 2
+        mid_text = f"Mid: {mid:.1f}c"
+    elif best_bid is not None:
+        mid_text = f"Best Bid: {best_bid}c"
+    elif best_ask is not None:
+        mid_text = f"Best Ask: {best_ask}c"
+    else:
+        mid_text = "No market"
+    table.add_row("", "", mid_text, style="bold")
+
+    bid_slice = bids[:levels]
+    for level in bid_slice:
+        qty = level.get("quantity")
+        price = level.get("price")
+        table.add_row("BID", str(qty) if qty is not None else "", str(price) if price is not None else "", style="green")
+
+    console.print("\n")
+    console.print(table)
+    # show cached trader info if available
+    ct = getattr(order_book, "current_trader", None)
+    if ct:
+        print(f"Current trader: {ct}{(' - '+order_book.current_name) if order_book.current_name else ''}")
+        print(f"  balanceUSD (cents): {order_book.current_trader_balance_usd if order_book.current_trader_balance_usd is not None else 'N/A'}")
+        print(f"  reservedUSD (cents): {order_book.current_trader_reserved_usd if order_book.current_trader_reserved_usd is not None else 'N/A'}")
+        print(f"  balanceInstrument (units): {order_book.current_trader_balance_instrument if order_book.current_trader_balance_instrument is not None else 'N/A'}")
+        print(f"  reservedInstrument (units): {order_book.current_trader_reserved_instrument if order_book.current_trader_reserved_instrument is not None else 'N/A'}")
+    print("")
 
 
-def main():
-    """Main command-line loop."""
-    # initialize firebase client and order book
-    firebase = MockFirebaseClient()
-    order_book = OrderBook()
+def add_trader_cli(firebase) -> tuple:
+    """Prompt for trader details and create trader via firebase if available.
+    Returns (trader_id, name).
+    """
+    name = input("Trader name to add?: ").strip()
+    balance_usd = prompt_int("Starting USD balance in cents: ")
+    balance_instrument = prompt_int("Starting instrument balance (integer units): ")
+    try:
+        trader_id = firebase.create_trader(name, balance_usd, balance_instrument)
+        print(f"Created trader {trader_id}")
+        return trader_id, name
+    except Exception as e:
+        print(f"Firebase create_trader failed: {e}")
+    trader_id = input("Enter an ID to assign to this trader (or leave blank to generate): ").strip()
+    if not trader_id:
+        trader_id = f"local-{name}-{new_order_id()}"
+    print(f"Using trader id: {trader_id}")
+    return trader_id, name
 
-    # print menu options:
-    #   1) Add order
-    #   2) Cancel order
-    #   3) Show top of book
-    #   4) Show trades
-    #   q) Quit
-    menu = """
-Options:
-1) Add order
-2) Cancel order
-3) Show top of book
-4) Show trades
-q) Quit
-"""
 
-    # loop until user quits:
-    while True:
-        print(menu)
-        choice = input("Choose an option: ").strip().lower()
+def switch_trader_cli(firebase, order_book: OrderBook):
+    """Prompt to switch current trader; list all traders (if available) for selection."""
+    try:
+        order_book.all_traders = firebase.get_all_traders()
+    except Exception as e:
+        print(f"Warning: could not fetch traders: {e}")
+        order_book.all_traders = []
 
-        #   if add order:
-        #       gather user_id, side, price, qty
-        #       call firebase.create_order(payload)
-        #       if success, call order_book.add_order(Order(...))
-        #       display any trades
-        if choice == "1":
-            user_id = input("Enter user ID: ").strip()
-            side = prompt_side()
-            price = prompt_float("Enter price: ")
-            qty = prompt_int("Enter quantity: ")
-
-            order_id = new_order_id()
-            payload = {
-                "order_id": order_id,
-                "user_id": user_id,
-                "side": side,
-                "price": price,
-                "qty": qty,
-            }
-
-            if firebase.create_order(payload):
-                order = Order(order_id, user_id, side, price, qty)
-                trades = order_book.add_order(order)
-                if trades:
-                    print("\nTrades executed:")
-                    for trade in trades:
-                        print(trade)
-                else:
-                    print("Order added with no trades.")
+    if order_book.all_traders:
+        print("Available traders:")
+        for i, t in enumerate(order_book.all_traders, start=1):
+            tid = t.get("id") or t.get("traderId")
+            name = t.get("name", "")
+            print(f"{i}) {tid} {'- '+name if name else ''}")
+        sel = input("Choose trader number to switch to (or enter ID, blank to cancel): ").strip()
+        if not sel:
+            print("Switch cancelled.")
+            return
+        # numeric selection
+        if sel.isdigit():
+            idx = int(sel) - 1
+            if 0 <= idx < len(order_book.all_traders):
+                chosen = order_book.all_traders[idx]
+                tid = chosen.get("id") or chosen.get("traderId")
+                name = chosen.get("name")
             else:
-                print("Failed to create order in Firebase.")
-
-        #   if cancel order:
-        #       prompt for id
-        #       firebase.delete_order(id)
-        #       order_book.cancel_order(id)
-        elif choice == "2":
-            order_id = input("Enter order ID to cancel: ").strip()
-            firebase.delete_order(order_id)
-            order_book.cancel_order(order_id)
-            print(f"Order {order_id} cancelled (if existed).")
-
-        #   if show book:
-        #       call show_book()
-        elif choice == "3":
-            show_book(order_book)
-
-        #   if show trades:
-        #       print order_book.trades
-        elif choice == "4":
-            print("\n--- Trades ---")
-            for trade in order_book.trades:
-                print(trade)
-            print("--------------\n")
-
-        elif choice == "q":
-            print("Exiting...")
-            break
-
+                print("Invalid selection.")
+                return
         else:
-            print("Invalid choice. Please try again.")
+            # treat as id
+            tid = sel
+            name = None
+            try:
+                t = firebase.get_trader(tid)
+                name = t.get("name") if t else None
+            except Exception:
+                name = None
+    else:
+        # fallback to prompting for id (previous behavior)
+        current_id = getattr(order_book, "current_trader", None)
+        current_name = getattr(order_book, "current_name", None)
+        print(f"Current trader: {current_id if current_id else 'None'}{(' - '+current_name) if current_name else ''}")
+        tid = input("Enter trader ID to switch to (or blank to cancel): ").strip()
+        if not tid:
+            print("Switch cancelled.")
+            return
+        name = None
+        if hasattr(firebase, "get_trader"):
+            try:
+                t = firebase.get_trader(tid)
+                if t is None:
+                    print("Trader not found in Firebase. Switch aborted.")
+                    return
+                name = t.get("name")
+            except Exception as e:
+                print(f"Firebase get_trader failed: {e} -- proceeding to set trader anyway.")
+
+    # set cached fields on order_book
+    order_book.current_trader = tid
+    order_book.current_name = name if name else None
+
+    # try to fetch and cache balances/reserves
+    try:
+        tdoc = firebase.get_trader(tid)
+        if tdoc:
+            order_book.current_trader_balance_usd = int(tdoc.get("balanceUSD", 0))
+            order_book.current_trader_reserved_usd = int(tdoc.get("reservedUSD", 0))
+            order_book.current_trader_balance_instrument = int(tdoc.get("balanceInstrument", 0))
+            order_book.current_trader_reserved_instrument = int(tdoc.get("reservedInstrument", 0))
+        else:
+            order_book.current_trader_balance_usd = None
+            order_book.current_trader_reserved_usd = None
+            order_book.current_trader_balance_instrument = None
+            order_book.current_trader_reserved_instrument = None
+    except Exception:
+        order_book.current_trader_balance_usd = None
+        order_book.current_trader_reserved_usd = None
+        order_book.current_trader_balance_instrument = None
+        order_book.current_trader_reserved_instrument = None
+
+    print(f"Switched current trader to: {tid}{(' - '+order_book.current_name) if order_book.current_name else ''}")
 
 
-if __name__ == "__main__":
-    main()
+def refresh_trader_cache(firebase: FirestoreClient, order_book: OrderBook) -> None:
+    """Fetch current trader doc and update cached balances/reserves on order_book."""
+    tid = getattr(order_book, "current_trader", None)
+    if not tid:
+        order_book.current_trader_balance_usd = None
+        order_book.current_trader_reserved_usd = None
+        order_book.current_trader_balance_instrument = None
+        order_book.current_trader_reserved_instrument = None
+        return
+    try:
+        print(f"[refresh_trader_cache] fetching trader {tid}...")
+        tdoc = firebase.get_trader(tid)
+        if tdoc:
+            order_book.current_trader_balance_usd = int(tdoc.get("balanceUSD", 0))
+            order_book.current_trader_reserved_usd = int(tdoc.get("reservedUSD", 0))
+            order_book.current_trader_balance_instrument = int(tdoc.get("balanceInstrument", 0))
+            order_book.current_trader_reserved_instrument = int(tdoc.get("reservedInstrument", 0))
+            order_book.current_name = tdoc.get("name", order_book.current_name)
+            print(
+                "[refresh_trader_cache] updated balances: "
+                f"balanceUSD={order_book.current_trader_balance_usd}, "
+                f"reservedUSD={order_book.current_trader_reserved_usd}, "
+                f"balanceInstrument={order_book.current_trader_balance_instrument}, "
+                f"reservedInstrument={order_book.current_trader_reserved_instrument}"
+            )
+        else:
+            order_book.current_trader_balance_usd = None
+            order_book.current_trader_reserved_usd = None
+            order_book.current_trader_balance_instrument = None
+            order_book.current_trader_reserved_instrument = None
+            print(f"[refresh_trader_cache] trader {tid} not found.")
+    except Exception as e:
+        print(f"[refresh_trader_cache] failed to fetch trader {tid}: {e}")
+        order_book.current_trader_balance_usd = None
+        order_book.current_trader_reserved_usd = None
+        order_book.current_trader_balance_instrument = None
+        order_book.current_trader_reserved_instrument = None
