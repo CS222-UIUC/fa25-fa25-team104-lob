@@ -16,7 +16,7 @@
 1. Clone the repository.
 2. Create/activate a Python virtual environment.
 3. Install dependencies: `pip install -r requirements.txt`.
-4. Provide `serviceAccount.json` (Firebase credentials) in the project root.
+4. IMPORTANT: Provide `serviceAccount.json` (Firebase credentials) in the project root (We did not include our database's private key. We can be contacted for it, or a new one can be generated to replace it)
 5. Run the CLI: `python main.py`.
 
 ## 4. Team Members & Roles
